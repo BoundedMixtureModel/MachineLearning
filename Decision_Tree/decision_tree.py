@@ -1,10 +1,13 @@
 import numpy as np
+import operator
 
 dataset = [[1, 1, 1],
            [1, 1, 1],
            [1, 0, 0],
            [0, 1, 0],
            [0, 1, 0]]
+
+labels = ['no surfacing','flippers']
 dataset = np.array(dataset)
 
 
@@ -39,12 +42,10 @@ def split_dataset(dataset, axis, value):
             reducedFeatVec = featVec[:axis]     #chop out axis used for splitting
             reducedFeatVec = np.concatenate((reducedFeatVec, featVec[axis+1:]))
             if retDataSet is None:
-                retDataSet = reducedFeatVec
+                retDataSet = reducedFeatVec[np.newaxis, :]
             else:
                 retDataSet = np.vstack((retDataSet, reducedFeatVec))
     return retDataSet
-
-
 
 
 def choose_feature(dataset):
@@ -78,4 +79,35 @@ def choose_feature(dataset):
     return best_feature  # returns index of best feature
 
 
-print(choose_feature(dataset))
+def get_majority_label(class_list):
+    '''
+    get the most frequent label, will be used to label a node.
+    '''
+    class_count={}
+    for vote in class_list:
+        if vote not in class_count.keys():
+            class_count[vote] = 0
+        else:
+            class_count[vote] += 1
+    sorted_class_count = sorted(class_count.items(), key=operator.itemgetter(1), reverse=True)
+    return sorted_class_count[0][0]
+
+def createTree(dataset, labels):
+    class_list = [observation[-1] for observation in dataset]
+    if class_list.count(class_list[0]) == len(class_list):
+        return class_list[0]#stop splitting when all of the classes are equal
+    if len(dataset[0]) == 1: #stop splitting when there are no more features in dataSet
+        return get_majority_label(class_list)
+    best_feature = choose_feature(dataset)
+    best_feature_label = labels[best_feature]
+    decision_tree = {best_feature_label:{}}
+    del(labels[best_feature])
+    # get a set of unique values of selected best features, for every data
+    unique_values_set = set([observation[best_feature] for observation in dataset])
+    for value in unique_values_set:
+        subLabels = labels[:]       #copy all of labels, so trees don't mess up existing labels
+        decision_tree[best_feature_label][value] = createTree(split_dataset(dataset, best_feature, value),subLabels)
+    return decision_tree
+
+
+print(createTree(dataset, labels))
