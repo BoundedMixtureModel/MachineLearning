@@ -1,5 +1,6 @@
 '''
 use scene-15 dataset to verify AutoEncoder algorithm, check https://qixianbiao.github.io/Scene.htmlsee
+using gpu to accelerate
 '''
 
 import os
@@ -14,13 +15,26 @@ from keras.utils import to_categorical
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from tensorflow.python.client import device_lib
 
+# configure the gpu
+# set log level
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+# model will be trained on GPU 0
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+# output : physical_device_desc: "device: 0, name: GeForce GTX 1050, pci bus id: 0000:01:00.0"
+print(device_lib.list_local_devices())
 
+
+# data preprocessing
 image_class = []
 train_dataset = []
 X_train = np.zeros((1500, 256, 256))
 y_train = np.zeros((1500,))
+test_dataset = []
+X_test = np.zeros((2985, 256, 256))
+y_test = np.zeros((2985,))
 
 # the train data path
 path = "data/train/"
@@ -44,11 +58,7 @@ for i, train_data in enumerate(train_dataset):
     X_train[i] = train_data[0]
     y_train[i] = train_data[1]
 
-
-test_dataset = []
-X_test = np.zeros((2985, 256, 256))
-y_test = np.zeros((2985,))
-# the train data path
+# the test data path
 path = "data/test/"
 dirs = os.listdir(path)
 # get the x and y of test data
@@ -66,15 +76,12 @@ for i, test_data in enumerate(test_dataset):
     y_test[i] = test_data[1]
 
 
-
-
+# build model
 # input dimension = 256*256 = 65536
 input_dim = np.prod(X_train.shape[1:])
-
 # this is the size of our encoded representations
-encoding_dim = 2048
-
-# The compression factor is the ratio of the input dimension (65536) to the encoded dimension(2048),which is 32
+encoding_dim = 512
+# The compression factor is the ratio of the input dimension (65536) to the encoded dimension(512),which is 128
 compression_factor = float(input_dim) / encoding_dim
 print("Compression factor: %s" % compression_factor)
 
@@ -97,17 +104,17 @@ X_test = X_test.reshape((len(X_test), np.prod(X_test.shape[1:])))
 history = autoencoder.fit(X_train, X_train, epochs=10, batch_size=256, shuffle=True,
                 validation_data=(X_test, X_test))
 
-#_________________________________________________________________
+# _________________________________________________________________
 # Layer (type)                 Output Shape              Param #
 # =================================================================
 # input_1 (InputLayer)         (None, 65536)             0
 # _________________________________________________________________
-# dense_1 (Dense)              (None, 2048)              134219776
+# dense_1 (Dense)              (None, 512)               33554944
 # _________________________________________________________________
-# dense_2 (Dense)              (None, 65536)             134283264
+# dense_2 (Dense)              (None, 65536)             33619968
 # =================================================================
-# Total params: 268,503,040
-# Trainable params: 268,503,040
+# Total params: 67,174,912
+# Trainable params: 67,174,912
 # Non-trainable params: 0
 # _________________________________________________________________
 print(autoencoder.summary())
