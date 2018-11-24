@@ -9,16 +9,26 @@ import numpy as np
 from matplotlib.pylab import *
 from scipy.stats import norm
 import matplotlib.pyplot as plt
+import mpmath
 
 
 def Asymmetric_Gassian_Distribution(xjk, mu_jk, s_ljk, s_rjk):
+    '''
+    the sampling distribution formula
+    use mpmath package to calculate by high precision
+    '''
     if xjk < mu_jk:
-        return np.sqrt(2/np.pi)/(np.power(s_ljk, -0.5) + np.power(s_rjk, -0.5)) * np.exp(- 0.5 * s_ljk * (xjk- mu_jk)**2)
+        return mpmath.sqrt(2/mpmath.pi)/(mpmath.power(s_ljk, -0.5) + mpmath.power(s_rjk, -0.5))\
+               * mpmath.exp(- 0.5 * s_ljk * (xjk- mu_jk)**2)
     else:
-        return np.sqrt(2/np.pi)/(np.power(s_ljk, -0.5) + np.power(s_rjk, -0.5)) * np.exp(- 0.5 * s_rjk * (xjk- mu_jk)**2)
-
+        return mpmath.sqrt(2/mpmath.pi)/(mpmath.power(s_ljk, -0.5) + mpmath.power(s_rjk, -0.5))\
+               * mpmath.exp(- 0.5 * s_rjk * (xjk- mu_jk)**2)
 
 def Metropolis_Hastings_Sampling_AGD(mu_jk, s_ljk, s_rjk):
+    '''
+    the metroplis hasting algorithm
+    currently, the algorithm use random walk method to transform Metropolis Hastings to Metropolis algorithm
+    '''
     n = 25000
     x = norm.rvs(0, 2.5, 1)[0]
     vec = []
