@@ -12,7 +12,7 @@ def get_img(data_path):
     img = imresize(img, (img_size, img_size, 3))
     return img
 
-def get_dataset(dataset_path='Data/Train_Data'):
+def get_dataset(dataset_path='Data'):
     # Getting all data from data path:
     labels = listdir(dataset_path) # Geting labels
     X = []

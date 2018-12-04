@@ -17,8 +17,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from tensorflow.python.client import device_lib
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
+from get_dataset import get_dataset
 
-from get_dataset import *
 
 # configure the gpu
 # set log level
@@ -31,7 +31,6 @@ print(device_lib.list_local_devices())
 
 
 # Getting Dataset:
-from get_dataset import get_dataset
 X_train, X_test, Y_train, Y_test = get_dataset()
 classes = ['cat', 'dog']
 
@@ -146,8 +145,12 @@ model.compile(optimizer='adam',
               loss='categorical_crossentropy',
               metrics=['accuracy'])
 
+print(Y_train.shape)
+print(Y_test.shape)
 # Convert labels to categorical one-hot encoding
 Y_train = to_categorical(Y_train, num_classes=2)
+print(Y_train.shape)
+print(Y_test.shape)
 
 # Train the model, iterating on the data in batches of 32 samples
 model.fit(X_train, Y_train, epochs=100, batch_size=1500)
