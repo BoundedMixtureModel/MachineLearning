@@ -39,7 +39,7 @@ class VariationalInference():
         # corpus parameters
         self.alpha = np.full((1, self.K), alpha_init)
         # self.beta = np.tile([1.0/ self.V] * self.V, (self.K, 1)) # rows (topics) sum up to 1 (KxV)
-        # self.beta = np.random.gamma(100., 1. / 100., (self.K, self.V));
+        # self.beta = np.random.gamma(100., 1. / 100., (self.K, self.V))
         self.beta = np.random.random((self.K, self.V))
         self.beta /= self.beta.sum(axis=1)[:, np.newaxis]
 
@@ -135,8 +135,8 @@ class VariationalInference():
             # log likelihood - minka
             q = beta.T * np.exp(digamma(self.gamma[[d]]))
             q /= q.sum(axis=1, keepdims=True)
-            e += gammaln(np.sum(self.alpha)) - gammaln(np.sum(self.gamma[[d]]));
-            e += np.sum(gammaln(self.gamma[[d]])) - np.sum(gammaln(self.alpha));
+            e += gammaln(np.sum(self.alpha)) - gammaln(np.sum(self.gamma[[d]]))
+            e += np.sum(gammaln(self.gamma[[d]])) - np.sum(gammaln(self.alpha))
             r = np.log(beta.T / q)
             e = e + np.sum(doc_counts * (q * r).sum(axis=1)[doc_ids])
 
@@ -145,9 +145,9 @@ class VariationalInference():
             log_likelihood = scipy.special.gammaln(np.sum(self.alpha)) - np.sum(scipy.special.gammaln(self.alpha))
             # compute the gamma terms
             log_likelihood += np.sum(scipy.special.gammaln(self.gamma[d])) - scipy.special.gammaln(
-                np.sum(self.gamma[d]));
+                np.sum(self.gamma[d]))
             # compute the phi terms
-            log_likelihood -= np.sum(np.dot(doc_counts, np.exp(log_phi) * log_phi));
+            log_likelihood -= np.sum(np.dot(doc_counts, np.exp(log_phi) * log_phi))
 
             # blei complete eq
             # # compute log-likelihood
@@ -179,73 +179,72 @@ class VariationalInference():
         return alpha, beta
 
     def newton_rapson(self, ss, D, K):
-        init_alpha = 100;
-        iter = 0;
+        init_alpha = 100
+        iter = 0
         df = 2
 
-        log_a = np.log(init_alpha);
+        log_a = np.log(init_alpha)
 
         while ((np.abs(df) > 1e-5) and (iter < 1000)):
             iter += 1
-            a = np.exp(log_a);
+            a = np.exp(log_a)
 
-            f = (D * (gammaln(K * a) - K * gammaln(a)) + (a - 1) * ss);
+            f = (D * (gammaln(K * a) - K * gammaln(a)) + (a - 1) * ss)
             df = (D * (K * digamma(K * a) - K * digamma(a)) + ss)
             d2f = (D * (K * K * polygamma(1, K * a) - K * polygamma(1, a)))
-            log_a = log_a - df / (d2f * a + df);
-            print("alpha maximization : {}   {}", f, df);
-        return (np.exp(log_a));
+            log_a = log_a - df / (d2f * a + df)
+            print("alpha maximization : {}   {}", f, df)
+        return (np.exp(log_a))
 
     def newton_rapson1(self, alpha_sufficient_statistics, hyper_parameter_iteration=100,
                        hyper_parameter_decay_factor=0.9, hyper_parameter_maximum_decay=10,
                        hyper_parameter_converge_threshold=1e-6):
-        # assert(alpha_sufficient_statistics.shape == (1, self._number_of_topics));
-        assert (alpha_sufficient_statistics.shape == (self.K,));
-        alpha_update = self.alpha;
+        # assert(alpha_sufficient_statistics.shape == (1, self._number_of_topics))
+        assert (alpha_sufficient_statistics.shape == (self.K,))
+        alpha_update = self.alpha
 
-        decay = 0;
+        decay = 0
         for alpha_iteration in range(hyper_parameter_iteration):
-            alpha_sum = np.sum(self.alpha);
+            alpha_sum = np.sum(self.alpha)
             alpha_gradient = self.M * (scipy.special.psi(alpha_sum) - scipy.special.psi(
-                self.alpha)) + alpha_sufficient_statistics;
-            alpha_hessian = -self.M * scipy.special.polygamma(1, self.alpha);
+                self.alpha)) + alpha_sufficient_statistics
+            alpha_hessian = -self.M * scipy.special.polygamma(1, self.alpha)
 
             if np.any(np.isinf(alpha_gradient)) or np.any(np.isnan(alpha_gradient)):
-                print
-                "illegal alpha gradient vector", alpha_gradient
+                print("illegal alpha gradient vector", alpha_gradient)
 
-            sum_g_h = np.sum(alpha_gradient / alpha_hessian);
-            sum_1_h = 1.0 / alpha_hessian;
+            sum_g_h = np.sum(alpha_gradient / alpha_hessian)
+            sum_1_h = 1.0 / alpha_hessian
 
-            z = self.M * scipy.special.polygamma(1, alpha_sum);
-            c = sum_g_h / (1.0 / z + sum_1_h);
+            z = self.M * scipy.special.polygamma(1, alpha_sum)
+            c = sum_g_h / (1.0 / z + sum_1_h)
 
             # update the alpha vector
             while True:
                 singular_hessian = False
 
-                step_size = np.power(hyper_parameter_decay_factor, decay) * (alpha_gradient - c) / alpha_hessian;
+                step_size = np.power(hyper_parameter_decay_factor, decay) * (alpha_gradient - c) / alpha_hessian
                 # print "step size is", step_size
-                assert (self.alpha.shape == step_size.shape);
+                assert (self.alpha.shape == step_size.shape)
 
                 if np.any(self.alpha <= step_size):
                     singular_hessian = True
                 else:
-                    alpha_update = self.alpha - step_size;
+                    alpha_update = self.alpha - step_size
 
                 if singular_hessian:
-                    decay += 1;
+                    decay += 1
                     if decay > hyper_parameter_maximum_decay:
-                        break;
+                        break
                 else:
-                    break;
+                    break
 
             # compute the alpha sum
             # check the alpha converge criteria
-            mean_change = np.mean(abs(alpha_update - self.alpha));
-            self.alpha = alpha_update;
+            mean_change = np.mean(abs(alpha_update - self.alpha))
+            self.alpha = alpha_update
             if mean_change <= hyper_parameter_converge_threshold:
-                break;
+                break
 
         return 0
 
@@ -292,5 +291,5 @@ def parse_docs(docs):
 
 
 if __name__ == "__main__":
-    raw_docs = read('data/data_small1.txt');
+    raw_docs = read('data/data_small1.txt')
     VariationalInference(raw_docs).EM()
